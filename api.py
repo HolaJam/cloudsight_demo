@@ -1,34 +1,47 @@
 # coding=utf8
 import cloudsight
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
-def api(url):
-    auth = cloudsight.SimpleAuth('CYPM46vO1M7oMZ2OUq-yXw')
-    api = cloudsight.API(auth)
+class demo(object):
+    def __init__(self,url,key):
+        self.url = url
+        self.key = key
+    def conn(self):
+        auth = cloudsight.SimpleAuth(key = self.key)
+        api = cloudsight.API(auth = auth)
+        response = api.remote_image_request(self.url, {
+            'image_request[locale]': 'zh-CN',
+            'image_request[language]': 'zh-CN',
+        })
+        return api.image_response(response['token'])
+    def analyse_status(self):
+        status = self.conn()
+        if status['status'] == cloudsight.STATUS_NOT_COMPLETED:
+            print 'retry once again'
+        elif status['status'] == cloudsight.STATUS_NOT_FOUND:
+            print 'url doesn\'t match image'
+        elif status['status'] == cloudsight.STATUS_SKIPPED:
+            print 'image cann\'t be recognized'
+        elif status['status'] == cloudsight.STATUS_TIMEOUT:
+            print 'time out'
+        else:
+            pass
 
-    response = api.remote_image_request(url, {
-        'image_request[locale]': 'zh-CN',
-        'image_request[language]': 'zh-CN',
-    })
 
-    status = api.image_response(response['token'])
-    if status['status'] == cloudsight.STATUS_NOT_COMPLETED:
-        print 'retry once again'
-    elif status['status'] == cloudsight.STATUS_NOT_FOUND:
-        print 'url doesn\'t match image'
-    elif status['status'] == cloudsight.STATUS_SKIPPED:
-        print 'image cann\'t be recognized'
-    elif status['status'] == cloudsight.STATUS_TIMEOUT:
-        print 'time out'
-    elif status['status'] == cloudsight.STATUS_COMPLETED:
-        status = api.wait(response['token'], timeout=30)
-        print status[u'name']
-    else:
+if __name__ == '__main__':
+    try:
+        url = sys.argv[0]
+        key = sys.argv[1]
+        run_demo = demo()
+        run_demo.analyse_status(url, key)
+        pass
+    except Exception, e:
+        print 'Demo: python *.py url key'
+        print 'Error: %s',str(e)
         pass
 
-try:
-    url = ''
-    api(url)
-except Exception, e:
-    print 'Usage: cloudsightapi.py http://pic_url.com/test.jpg'
-    print 'Error: %s' % str(e)
-    pass
+
+
+
